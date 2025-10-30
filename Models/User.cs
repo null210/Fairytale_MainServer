@@ -11,5 +11,8 @@
         public List<Story> Stories { get; set; }
         public List<UserTag> UserTags { get; set; }
         public List<Recommendation> Recommendations { get; set; }
+
+        //10-30 임강묵 추가
+        public string? ReferenceVoiceFileId { get; set; }
     }
 }
