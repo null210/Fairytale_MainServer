@@ -6,6 +6,8 @@ using MainServer.Service.GoogleDrive;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.AspNetCore.Http;        //10-30 임강묵 추가
+
 namespace MainServer.BackgroundServices
 {
     public class StoryProcessingService : BackgroundService
@@ -86,6 +88,32 @@ namespace MainServer.BackgroundServices
                     return;
                 }
 
+                //10-30 임강묵 추가*****************************************************************************
+                var user = await context.Users.FirstOrDefaultAsync(u => u.Id == story.UserId);
+                if (user == null || string.IsNullOrEmpty(user.ReferenceVoiceFileId))
+                {
+                    _logger.LogWarning("Story {StoryId}의 사용자({UserId})에게 등록된 참조 음성이 없습니다.", story.Id, story.UserId);
+                    // 여기에 사용자에게 오류를 알리는 SignalR 로직을 추가할 수 있습니다.
+                    return;
+                }
+                
+                // 1. Google Drive에서 참조 음성 파일 다운로드
+                var referenceAudioData = await driveService.DownloadFile(user.ReferenceVoiceFileId);
+                if (referenceAudioData == null)
+                {
+                    _logger.LogError("참조 음성 파일 다운로드 실패: FileId={FileId}", user.ReferenceVoiceFileId);
+                    return;
+                }
+    
+                // 2. 다운로드한 byte[]를 IFormFile 객체로 변환
+                using var stream = new MemoryStream(referenceAudioData);
+                var referenceAudioFile = new FormFile(stream, 0, referenceAudioData.Length, "reference", "reference.wav")
+                {
+                    Headers = new HeaderDictionary(),
+                    ContentType = "audio/wav" // 실제 파일 타입에 맞게 설정
+                };
+                //10-30 임강묵 추가*****************************************************************************
+                
                 // 진행 상황 알림 - 시작
                 await _hubContext.Clients.Group($"user_{story.UserId}")
                     .SendAsync("AudioProgress", new { storyId = story.Id, progress = 10, status = "starting" });
