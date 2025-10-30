@@ -79,34 +79,40 @@ namespace MainServer.Service.AI
                 throw;
             }
         }
-
-        public async Task<byte[]> GenerateAudio(string text)
+        
+        //************************************************************************************************************************10-30 임강묵 수정
+        public async Task<byte[]> GenerateAudio(string text, IFormFile audioFile)
         {
-            try
-            {
-                var request = new
-                {
-                    text,
-                    voice = "child_friendly",
-                    speed = 1.0
-                };
+           try
+           {
+                // 핵심 변경점: JSON 대신 'MultipartFormDataContent'를 사용하여 텍스트와 파일을 함께 보낼 준비
+                using var content = new MultipartFormDataContent();
+        
+                // 텍스트 데이터 추가 (API가 요구하는 필드명: "text")
+                content.Add(new StringContent(text), "text");
+        
+                // 오디오 파일 데이터 추가 (API가 요구하는 필드명: "speaker_wav")
+                var fileContent = new StreamContent(audioFile.OpenReadStream());
+                fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(audioFile.ContentType);
+                content.Add(fileContent, "speaker_wav", audioFile.FileName);
 
-                var json = JsonSerializer.Serialize(request);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                // 허깅페이스 API 주소로 POST 요청 (이 부분은 기존 코드와 거의 동일)
+                var huggingFaceApiUrl = "https://limkang-ttstest.hf.space/generate-speech-api/";
+                var response = await _httpClient.PostAsync(huggingFaceApiUrl, content);
 
-                var response = await _httpClient.PostAsync("/api/tts/generate", content);
                 response.EnsureSuccessStatusCode();
 
                 var audioData = await response.Content.ReadAsByteArrayAsync();
-                _logger.LogInformation("Audio generated successfully, size: {Size} bytes", audioData.Length);
+                _logger.LogInformation("Audio with reference generated successfully, size: {Size} bytes", audioData.Length);
                 return audioData;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating audio");
+                _logger.LogError(ex, "Error generating audio with reference file");
                 throw;
             }
         }
+        //************************************************************************************************************************10-30 임강묵 수정
 
         public async Task<string> TranslateText(string text, string targetLanguage = "en")
         {
