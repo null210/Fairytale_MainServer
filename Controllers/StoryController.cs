@@ -24,8 +24,9 @@ namespace MainServer.Controllers
             _driveService = driveService;
         }
 
+         //******************************************************************************10-30 임강묵 수정
         [HttpPost("generate")]
-        public async Task<IActionResult> GenerateStory([FromBody] FairyTaleExplorer.DTOs.StoryGenerationDto dto)
+        public async Task<IActionResult> GenerateStory([FromForm] FairyTaleExplorer.DTOs.StoryGenerationDto dto, IFormFile audioFile)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -37,9 +38,6 @@ namespace MainServer.Controllers
 
             // TTS 생성 (선택적)
             string audioPath = null;
-
-
-            //10-30 임강묵 수정
             if (dto.GenerateAudio && audioFile != null)
             {
                 var audioData = await _aiService.GenerateAudio(enrichedStory, audioFile);
@@ -48,7 +46,7 @@ namespace MainServer.Controllers
                     audioPath = await _driveService.UploadFile(audioData, $"audio_{DateTime.Now.Ticks}.mp3");
                 }
             }
-            //10-30 임강묵 수정
+            //******************************************************************************10-30 임강묵 수정
 
             
             // Story 저장
