@@ -20,7 +20,7 @@ namespace MainServer.Controllers
         private readonly IUserService _userService;        //10-30 임강묵 추가
 
         
-        public StoryController(IStoryService storyService, IAIService aiService, IGoogleDriveService driveService)
+        public StoryController(IStoryService storyService, IAIService aiService, IGoogleDriveService driveService, IUserService userService)
         {
             _storyService = storyService;
             _aiService = aiService;
@@ -82,7 +82,7 @@ namespace MainServer.Controllers
             {
                 var user = await _userService.GetUserById(userId);
                 // '대표 목소리' 정보가 User 모델에 추가되었다고 가정합니다. (예: user.RepresentativeVoiceId)
-                if (user?.RepresentativeVoiceId == null) // 실제 속성명에 맞게 변경 필요
+                if (string.IsNullOrEmpty(user?.ReferenceVoiceFileId)) // 실제 속성명에 맞게 변경 필요
                 {
                     return BadRequest("오디오를 생성하려면 먼저 대표 목소리를 등록해야 합니다.");
                 }
