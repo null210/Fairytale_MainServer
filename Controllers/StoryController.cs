@@ -66,14 +66,6 @@ namespace MainServer.Controllers
         [HttpPost("generate")]
         public async Task<IActionResult> GenerateStory([FromForm] FairyTaleExplorer.DTOs.StoryGenerationDto dto)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            // AI 서버로 요청 (string, text 생성)
-            var storyText = await _aiService.GenerateStoryText(dto.Prompt);
-
-            // 생성형 LLM으로 이야기 생성
-            var enrichedStory = await _aiService.EnrichStory(storyText);
-
             // TTS 생성 (선택적)
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -88,7 +80,11 @@ namespace MainServer.Controllers
                 }
             }
             //******************************************************************************10-30 임강묵 수정
+             // AI 서버로 요청 (string, text 생성)
+            var storyText = await _aiService.GenerateStoryText(dto.Prompt);
 
+            // 생성형 LLM으로 이야기 생성
+            var enrichedStory = await _aiService.EnrichStory(storyText);
             
             // Story 저장
             var story = new Story
