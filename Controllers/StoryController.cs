@@ -26,7 +26,7 @@ namespace MainServer.Controllers
 
          //******************************************************************************10-30 임강묵 수정
         [HttpPost("generate")]
-        public async Task<IActionResult> GenerateStory([FromForm] FairyTaleExplorer.DTOs.StoryGenerationDto dto, IFormFile audioFile)
+        public async Task<IActionResult> GenerateStory([FromForm] FairyTaleExplorer.DTOs.StoryGenerationDto dto,[FromForm] IFormFile audioFile)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
