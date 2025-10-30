@@ -2,6 +2,7 @@
 using MainServer.Service.AI;
 using MainServer.Service.GoogleDrive;
 using MainServer.Service.Stroy;
+using MainServer.Service.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -16,14 +17,51 @@ namespace MainServer.Controllers
         private readonly IStoryService _storyService;
         private readonly IAIService _aiService;
         private readonly IGoogleDriveService _driveService;
+        private readonly IUserService _userService;        //10-30 임강묵 추가
 
+        
         public StoryController(IStoryService storyService, IAIService aiService, IGoogleDriveService driveService)
         {
             _storyService = storyService;
             _aiService = aiService;
             _driveService = driveService;
+            _userService = userService;                    //10-30 임강묵 추가
         }
 
+        //***********************************************************************10-30 임강묵 추가
+        [HttpPost("register-voice")]
+        public async Task<IActionResult> RegisterUserVoice(IFormFile audioFile)
+        {
+            if (audioFile == null || audioFile.Length == 0)
+            {
+                return BadRequest("오디오 파일이 필요합니다.");
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = await _userService.GetUserById(userId);
+
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            // Google Drive에 참조 음성 파일 업로드
+            // 스트림을 바이트 배열로 변환하는 헬퍼 메서드가 필요할 수 있습니다.
+            using var memoryStream = new MemoryStream();
+            await audioFile.CopyToAsync(memoryStream);
+            var fileBytes = memoryStream.ToArray();
+
+            var fileName = $"ref_voice_{userId}_{DateTime.UtcNow.Ticks}.wav";
+            var fileId = await _driveService.UploadFile(fileBytes, fileName);
+
+            // 사용자의 ReferenceVoiceFileId 업데이트
+            user.ReferenceVoiceFileId = fileId;
+            await _userService.UpdateUser(user);
+
+            return Ok(new { message = "대표 목소리가 성공적으로 등록되었습니다.", fileId = fileId });
+        }   
+         //******************************************************************************10-30 임강묵 추가
+         
          //******************************************************************************10-30 임강묵 수정
         [HttpPost("generate")]
         public async Task<IActionResult> GenerateStory([FromForm] FairyTaleExplorer.DTOs.StoryGenerationDto dto,[FromForm] IFormFile audioFile)
