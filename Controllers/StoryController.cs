@@ -37,12 +37,20 @@ namespace MainServer.Controllers
 
             // TTS 생성 (선택적)
             string audioPath = null;
-            if (dto.GenerateAudio)
-            {
-                var audioData = await _aiService.GenerateAudio(enrichedStory);
-                audioPath = await _driveService.UploadFile(audioData, $"audio_{DateTime.Now.Ticks}.mp3");
-            }
 
+
+            //10-30 임강묵 수정
+            if (dto.GenerateAudio && audioFile != null)
+            {
+                var audioData = await _aiService.GenerateAudio(enrichedStory, audioFile);
+                if (audioData != null)
+                {
+                    audioPath = await _driveService.UploadFile(audioData, $"audio_{DateTime.Now.Ticks}.mp3");
+                }
+            }
+            //10-30 임강묵 수정
+
+            
             // Story 저장
             var story = new Story
             {
