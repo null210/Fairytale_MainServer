@@ -2,7 +2,7 @@
 using MainServer.Service.AI;
 using MainServer.Service.GoogleDrive;
 using MainServer.Service.Stroy;
-using MainServer.Service.User;
+using MainServer.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
