@@ -119,7 +119,7 @@ namespace MainServer.BackgroundServices
                     .SendAsync("AudioProgress", new { storyId = story.Id, progress = 10, status = "starting" });
 
                 // TTS 생성
-                var audioData = await aiService.GenerateAudio(textContent.Content);
+                var audioData = await aiService.GenerateAudio(textContent.Content, referenceAudioFile);
 
                 await _hubContext.Clients.Group($"user_{story.UserId}")
                     .SendAsync("AudioProgress", new { storyId = story.Id, progress = 60, status = "generating" });
