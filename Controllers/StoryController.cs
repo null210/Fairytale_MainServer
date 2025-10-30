@@ -64,7 +64,7 @@ namespace MainServer.Controllers
          
          //******************************************************************************10-30 임강묵 수정
         [HttpPost("generate")]
-        public async Task<IActionResult> GenerateStory([FromForm] FairyTaleExplorer.DTOs.StoryGenerationDto dto,[FromForm] IFormFile audioFile)
+        public async Task<IActionResult> GenerateStory([FromForm] FairyTaleExplorer.DTOs.StoryGenerationDto dto)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -75,13 +75,16 @@ namespace MainServer.Controllers
             var enrichedStory = await _aiService.EnrichStory(storyText);
 
             // TTS 생성 (선택적)
-            string audioPath = null;
-            if (dto.GenerateAudio && audioFile != null)
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // 2. (선택적) 오디오 생성 요청 시, 사용자가 대표 목소리를 등록했는지 확인하는 방어 로직
+            if (dto.GenerateAudio)
             {
-                var audioData = await _aiService.GenerateAudio(enrichedStory, audioFile);
-                if (audioData != null)
+                var user = await _userService.GetUserById(userId);
+                // '대표 목소리' 정보가 User 모델에 추가되었다고 가정합니다. (예: user.RepresentativeVoiceId)
+                if (user?.RepresentativeVoiceId == null) // 실제 속성명에 맞게 변경 필요
                 {
-                    audioPath = await _driveService.UploadFile(audioData, $"audio_{DateTime.Now.Ticks}.mp3");
+                    return BadRequest("오디오를 생성하려면 먼저 대표 목소리를 등록해야 합니다.");
                 }
             }
             //******************************************************************************10-30 임강묵 수정
@@ -108,7 +111,7 @@ namespace MainServer.Controllers
             };
             await _storyService.AddContent(textContent);
 
-            return Ok(new { storyId = story.Id, story = enrichedStory, audioPath });
+            return Ok(new { storyId = story.Id, story = enrichedStory});            //10-30 임강묵 수정
         }
 
         [HttpGet("list")]
